@@ -1,0 +1,96 @@
+nohup: ignoring input
+==> Multiple private IPv4 addresses found. Please configure one with 'bind' and/or 'advertise'.
+nohup: ignoring input
+==> Multiple private IPv4 addresses found. Please configure one with 'bind' and/or 'advertise'.
+==> Starting Consul agent...
+           Version: 'v1.5.2'
+           Node ID: 'b91f5cc4-d5ff-aeb3-46cf-8f53a149dce1'
+         Node name: 'ubuntu'
+        Datacenter: 'dc1' (Segment: '<all>')
+            Server: true (Bootstrap: false)
+       Client Addr: [127.0.0.1] (HTTP: 8500, HTTPS: -1, gRPC: -1, DNS: 8600)
+      Cluster Addr: 192.168.0.180 (LAN: 8301, WAN: 8302)
+           Encrypt: Gossip: false, TLS-Outgoing: false, TLS-Incoming: false, Auto-Encrypt-TLS: false
+
+==> Log data will now stream in as it occurs:
+
+    2019/07/10 18:53:17 [INFO]  raft: Initial configuration (index=0): []
+    2019/07/10 18:53:17 [INFO]  raft: Node at 192.168.0.180:8300 [Follower] entering Follower state (Leader: "")
+    2019/07/10 18:53:17 [INFO] serf: EventMemberJoin: ubuntu.dc1 192.168.0.180
+    2019/07/10 18:53:17 [WARN] serf: Failed to re-join any previously known node
+    2019/07/10 18:53:17 [INFO] serf: EventMemberJoin: ubuntu 192.168.0.180
+    2019/07/10 18:53:17 [WARN] serf: Failed to re-join any previously known node
+    2019/07/10 18:53:17 [INFO] consul: Adding LAN server ubuntu (Addr: tcp/192.168.0.180:8300) (DC: dc1)
+    2019/07/10 18:53:17 [INFO] agent: Started DNS server 127.0.0.1:8600 (udp)
+    2019/07/10 18:53:17 [INFO] agent: Started DNS server 127.0.0.1:8600 (tcp)
+    2019/07/10 18:53:17 [INFO] consul: Handled member-join event for server "ubuntu.dc1" in area "wan"
+    2019/07/10 18:53:17 [INFO] agent: Started HTTP server on 127.0.0.1:8500 (tcp)
+    2019/07/10 18:53:17 [INFO] agent: started state syncer
+==> Consul agent running!
+    2019/07/10 18:53:23 [WARN]  raft: no known peers, aborting election
+    2019/07/10 18:53:24 [ERR] agent: failed to sync remote state: No cluster leader
+    2019/07/10 18:53:39 [INFO] agent: Caught signal:  interrupt
+    2019/07/10 18:53:39 [INFO] agent: Graceful shutdown disabled. Exiting
+    2019/07/10 18:53:39 [INFO] agent: Requesting shutdown
+    2019/07/10 18:53:39 [INFO] consul: shutting down server
+    2019/07/10 18:53:39 [WARN] serf: Shutdown without a Leave
+    2019/07/10 18:53:39 [WARN] serf: Shutdown without a Leave
+    2019/07/10 18:53:39 [INFO] manager: shutting down
+    2019/07/10 18:53:39 [INFO] agent: consul server down
+    2019/07/10 18:53:39 [INFO] agent: shutdown complete
+    2019/07/10 18:53:39 [INFO] agent: Stopping DNS server 127.0.0.1:8600 (tcp)
+    2019/07/10 18:53:39 [INFO] agent: Stopping DNS server 127.0.0.1:8600 (udp)
+    2019/07/10 18:53:39 [INFO] agent: Stopping HTTP server 127.0.0.1:8500 (tcp)
+    2019/07/10 18:53:39 [INFO] agent: Waiting for endpoints to shut down
+    2019/07/10 18:53:39 [INFO] agent: Endpoints down
+    2019/07/10 18:53:39 [INFO] agent: Exit code: 1
+nohup: ignoring input
+==> Starting Consul agent...
+           Version: 'v1.5.2'
+           Node ID: 'b91f5cc4-d5ff-aeb3-46cf-8f53a149dce1'
+         Node name: 'ubuntu'
+        Datacenter: 'dc1' (Segment: '<all>')
+            Server: true (Bootstrap: false)
+       Client Addr: [127.0.0.1] (HTTP: 8500, HTTPS: -1, gRPC: -1, DNS: 8600)
+      Cluster Addr: 192.168.0.180 (LAN: 8301, WAN: 8302)
+           Encrypt: Gossip: false, TLS-Outgoing: false, TLS-Incoming: false, Auto-Encrypt-TLS: false
+
+==> Log data will now stream in as it occurs:
+
+    2019/07/10 18:53:53 [INFO]  raft: Initial configuration (index=0): []
+    2019/07/10 18:53:53 [INFO]  raft: Node at 192.168.0.180:8300 [Follower] entering Follower state (Leader: "")
+    2019/07/10 18:53:53 [INFO] serf: EventMemberJoin: ubuntu.dc1 192.168.0.180
+    2019/07/10 18:53:53 [WARN] serf: Failed to re-join any previously known node
+    2019/07/10 18:53:53 [INFO] serf: EventMemberJoin: ubuntu 192.168.0.180
+    2019/07/10 18:53:53 [INFO] agent: Started DNS server 127.0.0.1:8600 (udp)
+    2019/07/10 18:53:53 [INFO] consul: Handled member-join event for server "ubuntu.dc1" in area "wan"
+    2019/07/10 18:53:53 [WARN] serf: Failed to re-join any previously known node
+    2019/07/10 18:53:53 [INFO] agent: Started DNS server 127.0.0.1:8600 (tcp)
+    2019/07/10 18:53:53 [INFO] consul: Adding LAN server ubuntu (Addr: tcp/192.168.0.180:8300) (DC: dc1)
+    2019/07/10 18:53:53 [INFO] agent: Started HTTP server on 127.0.0.1:8500 (tcp)
+    2019/07/10 18:53:53 [INFO] agent: started state syncer
+==> Consul agent running!
+    2019/07/10 18:54:00 [ERR] agent: failed to sync remote state: No cluster leader
+    2019/07/10 18:54:02 [WARN]  raft: no known peers, aborting election
+==> Failed to check for updates: Get https://checkpoint-api.hashicorp.com/v1/check/consul?arch=amd64&os=linux&signature=fa504345-02f6-4fe1-86db-3c451d62ec79&version=1.5.2: net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+    2019/07/10 18:54:15 [ERR] agent: Coordinate update error: No cluster leader
+    2019/07/10 18:54:26 [ERR] agent: failed to sync remote state: No cluster leader
+    2019/07/10 18:54:44 [ERR] agent: Coordinate update error: No cluster leader
+    2019/07/10 18:54:53 [ERR] agent: failed to sync remote state: No cluster leader
+    2019/07/10 18:55:14 [ERR] agent: Coordinate update error: No cluster leader
+    2019/07/10 18:55:21 [INFO] agent: Caught signal:  interrupt
+    2019/07/10 18:55:21 [INFO] agent: Graceful shutdown disabled. Exiting
+    2019/07/10 18:55:21 [INFO] agent: Requesting shutdown
+    2019/07/10 18:55:21 [INFO] consul: shutting down server
+    2019/07/10 18:55:21 [WARN] serf: Shutdown without a Leave
+    2019/07/10 18:55:21 [ERR] agent: failed to sync remote state: No cluster leader
+    2019/07/10 18:55:21 [WARN] serf: Shutdown without a Leave
+    2019/07/10 18:55:21 [INFO] manager: shutting down
+    2019/07/10 18:55:21 [INFO] agent: consul server down
+    2019/07/10 18:55:21 [INFO] agent: shutdown complete
+    2019/07/10 18:55:21 [INFO] agent: Stopping DNS server 127.0.0.1:8600 (tcp)
+    2019/07/10 18:55:21 [INFO] agent: Stopping DNS server 127.0.0.1:8600 (udp)
+    2019/07/10 18:55:21 [INFO] agent: Stopping HTTP server 127.0.0.1:8500 (tcp)
+    2019/07/10 18:55:21 [INFO] agent: Waiting for endpoints to shut down
+    2019/07/10 18:55:21 [INFO] agent: Endpoints down
+    2019/07/10 18:55:21 [INFO] agent: Exit code: 1
