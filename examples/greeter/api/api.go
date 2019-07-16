@@ -5,14 +5,18 @@ import (
 	"log"
 	"strings"
 
-	hello "github.com/micro/examples/greeter/srv/proto/hello"
 	"github.com/micro/go-micro"
 	api "github.com/micro/go-micro/api/proto"
 	"github.com/micro/go-micro/errors"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/registry/consul"
+	hello "github.com/myproject-0722/my-micro/examples/greeter/srv/proto/hello"
 
 	"context"
+
+	ocplugin "github.com/micro/go-plugins/wrapper/trace/opentracing"
+	"github.com/myproject-0722/my-micro/lib/tracer"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type Say struct {
@@ -44,6 +48,13 @@ func (s *Say) Hello(ctx context.Context, req *api.Request, rsp *api.Response) er
 }
 
 func main() {
+	t, io, err := tracer.NewTracer("go.mymicro.api.greeter", "localhost:6831")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer io.Close()
+	opentracing.SetGlobalTracer(t)
+
 	// 推荐使用etcd集群 做为服务发现,为测试暂用consul
 	reg := consul.NewRegistry(func(op *registry.Options) {
 		op.Addrs = []string{
@@ -58,7 +69,8 @@ func main() {
 
 	service := micro.NewService(
 		micro.Registry(reg),
-		micro.Name("go.micro.api.greeter"),
+		micro.Name("go.mymicro.api.greeter"),
+		micro.WrapHandler(ocplugin.NewHandlerWrapper(opentracing.GlobalTracer())),
 	)
 
 	// parse command line flags
@@ -66,7 +78,7 @@ func main() {
 
 	service.Server().Handle(
 		service.Server().NewHandler(
-			&Say{Client: hello.NewSayService("go.micro.srv.greeter", service.Client())},
+			&Say{Client: hello.NewSayService("go.mymicro.srv.greeter", service.Client())},
 		),
 	)
 

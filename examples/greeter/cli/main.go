@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	hello "github.com/micro/examples/greeter/srv/proto/hello"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/registry/consul"
+	hello "github.com/myproject-0722/my-micro/examples/greeter/srv/proto/hello"
 )
 
 func main() {
