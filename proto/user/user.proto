@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-package go.mymicro.srv.user;
+package go.mymicro.proto.user;
 
 service User {
-	rpc SignIn(Request) returns (Response) {}
+	rpc SignIn(SignInRequest) returns (SignInResponse) {}
 }
 
-message Request {
-    string device_id = 1;
-	string user_name = 2;
-    string user_password = 3;       //暂时明文，后面再修改
+message SignInRequest {
+    string DeviceId = 1;
+	int64 UserId = 2;
+    string Token = 3;
 }
 
-message Response {
-	int32 res_code = 1;		//200 ok 401 未认证
-	string res_msg = 2;
+message SignInResponse {
+	int32 ResCode = 1;		//200 ok 401 未认证
+	string ResMsg = 2;
 }

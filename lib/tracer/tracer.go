@@ -2,6 +2,7 @@ package tracer
 
 import (
 	"io"
+	"log"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -35,4 +36,13 @@ func NewTracer(servicename string, addr string) (opentracing.Tracer, io.Closer, 
 	)
 
 	return tracer, closer, err
+}
+
+func InitTracer(servicename string) {
+	t, io, err := NewTracer(servicename, "localhost:6831")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer io.Close()
+	opentracing.SetGlobalTracer(t)
 }
