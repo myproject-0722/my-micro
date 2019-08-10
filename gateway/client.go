@@ -3,37 +3,27 @@ package gateway
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 	"io"
-	"log"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/micro/go-micro"
+	libmq "github.com/myproject-0722/my-micro/lib/mq"
+	"github.com/myproject-0722/my-micro/lib/register"
+	mq "github.com/myproject-0722/my-micro/proto/mq"
+	packet "github.com/myproject-0722/my-micro/proto/packet"
 	user "github.com/myproject-0722/my-micro/proto/user"
-
-	"github.com/micro/go-micro/registry"
-	"github.com/micro/go-micro/registry/consul"
+	"github.com/nsqio/go-nsq"
 )
 
 const (
 	ReadDeadline  = 10 * time.Minute
 	WriteDeadline = 10 * time.Second
-)
-
-// 消息协议
-const (
-	CodeSignIn         = 1 // 设备登录
-	CodeSignInACK      = 2 // 设备登录回执
-	CodeSyncTrigger    = 3 // 消息同步触发
-	CodeHeadbeat       = 4 // 心跳
-	CodeHeadbeatACK    = 5 // 心跳回执
-	CodeMessageSend    = 6 // 消息发送
-	CodeMessageSendACK = 7 // 消息发送回执
-	CodeMessage        = 8 // 消息投递
-	CodeMessageACK     = 9 // 消息投递回执
 )
 
 type Client struct {
@@ -45,20 +35,12 @@ type Client struct {
 	IsSignIn   bool // 是否登录
 }
 
-// Package 消息包
-type Package struct {
-	Code    int    // 消息类型
-	Path    string //
-	Method  string //
-	Content []byte // 消息体
-}
-
 func NewClient(conn net.Conn) *Client {
 	codec := NewCodec(conn)
 	return &Client{
 		Codec:      codec,
-		ReadBuffer: newBuffer(conn, BufLen),
-		WriteBuf:   make([]byte, BufLen),
+		ReadBuffer: newBuffer(conn, packet.BufLen),
+		WriteBuf:   make([]byte, packet.BufLen),
 	}
 }
 
@@ -85,62 +67,104 @@ func (c *Client) DoConn() {
 			if ok {
 				c.HandlePackage(message)
 				continue
+			} else {
+				c.HandleReadErr(err)
+				return
 			}
-			break
 		}
 	}
 }
 
 // HandlePackage 处理消息包
-func (c *Client) HandlePackage(pack *Package) {
+func (c *Client) HandlePackage(pack *packet.Package) {
 	// 未登录拦截
-	if pack.Code != CodeSignIn && c.IsSignIn == false {
+	if pack.Code != packet.CodeSignIn && c.IsSignIn == false {
 		c.Release()
 		return
 	}
 
 	switch pack.Code {
-	case CodeSignIn:
+	case packet.CodeSignIn:
 		c.HandlePackageSignIn(pack)
 		break
+	case packet.CodeHeadbeat:
+		c.HandlePackageHeadbeat()
+		break
 	default:
+		c.HandlePackageOther(pack)
 		break
 	}
-	/*
 
-	  switch pack.Code {
-	  case CodeSignIn:
-	      c.HandlePackageSignIn(pack)
-	  case CodeSyncTrigger:
-	      c.HandlePackageSyncTrigger(pack)
-	  case CodeHeadbeat:
-	      c.HandlePackageHeadbeat()
-	  case CodeMessageSend:
-	      c.HandlePackageMessageSend(pack)
-	  case CodeMessageACK:
-	      c.HandlePackageMessageACK(pack)
-	  }*/
 	return
 }
 
+// HandlePackageHeadbeat 处理心跳包
+func (c *Client) HandlePackageHeadbeat() {
+	err := c.Codec.Eecode(packet.Package{Code: packet.CodeHeadbeatACK, Content: []byte{}}, WriteDeadline)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Debug("心跳：", "device_id:", c.DeviceId, "user_id:", c.UserId)
+}
+
+func (c *Client) HandlePackageOther(pack *packet.Package) {
+	message := mq.MQMessage{
+		UserId:    c.UserId,
+		DeviceId:  c.DeviceId,
+		CodeType:  pack.Code,
+		PbMessage: pack.Content,
+	}
+
+	libmq.PublishMessage("gateway", message)
+}
+
+func (c *Client) HandleMQ2ClientMessage(msg *nsq.Message) error {
+	var message mq.MQMessage
+	err := proto.Unmarshal(msg.Body, &message)
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = c.Codec.Eecode(packet.Package{Code: message.CodeType, Content: message.PbMessage}, WriteDeadline)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+func HandleMQ2ClientMessage(msg *nsq.Message) error {
+	var message mq.MQMessage
+	err := proto.Unmarshal(msg.Body, &message)
+	if err != nil {
+		log.Error(err)
+	}
+
+	c := load(message.DeviceId)
+	if c != nil {
+		err = c.Codec.Eecode(packet.Package{Code: message.CodeType, Content: message.PbMessage}, WriteDeadline)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // HandlePackageSignIn 处理登录消息包
-func (c *Client) HandlePackageSignIn(pack *Package) {
+func (c *Client) HandlePackageSignIn(pack *packet.Package) {
 	var sign user.SignInRequest
 	err := proto.Unmarshal(pack.Content, &sign)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 		c.Release()
 		return
 	}
 
-	log.Print(sign.DeviceId, " ", sign.UserId, " ", sign.Token)
+	log.Debug("Recv signin:", sign.DeviceId, " ", sign.UserId, " ", sign.Token)
 
-	// 推荐使用etcd集群 做为服务发现,为测试暂用consul
-	reg := consul.NewRegistry(func(op *registry.Options) {
-		op.Addrs = []string{
-			"127.0.0.1:8500",
-		}
-	})
+	reg := register.NewRegistry()
 
 	// create a new service
 	service := micro.NewService(micro.Registry(reg))
@@ -153,44 +177,58 @@ func (c *Client) HandlePackageSignIn(pack *Package) {
 	// Make request
 	rsp, err := cl.SignIn(context.Background(), &sign)
 	if err != nil {
-		fmt.Println(err)
+		log.Debug(err)
 		return
 	}
 
-	fmt.Println(rsp.ResCode)
-	/*var sign pb.SignIn
-	  err := proto.Unmarshal(pack.Content, &sign)
-	  if err != nil {
-	      log.Fatal(err)
-	      c.Release()
-	      return
-	  }*/
+	content, err := proto.Marshal(rsp)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	err = c.Codec.Eecode(packet.Package{Code: packet.CodeSignInACK, Content: content}, WriteDeadline)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	log.Debug("SignIn rescode:", rsp.ResCode)
+	if rsp.ResCode == 200 {
+		c.IsSignIn = true
+		c.DeviceId = sign.DeviceId
+		c.UserId = sign.UserId
+		store(c.DeviceId, c)
+
+		var clientMsgTopic = "clientmsg_" + strconv.FormatInt(c.DeviceId, 10)
+		libmq.NsqConsumer(clientMsgTopic, "1", HandleMQ2ClientMessage, 20)
+	}
 }
 
 // Decode 解码数据
-func (c *Client) Decode() (*Package, bool) {
+func (c *Client) Decode() (*packet.Package, bool) {
 	var err error
 	// 读取数据类型
-	typeBuf, err := c.ReadBuffer.seek(0, TypeLen)
+	typeBuf, err := c.ReadBuffer.seek(0, packet.TypeLen)
 	if err != nil {
 		return nil, false
 	}
 
 	// 读取数据长度
-	lenBuf, err := c.ReadBuffer.seek(TypeLen, HeadLen)
+	lenBuf, err := c.ReadBuffer.seek(packet.TypeLen, packet.HeadLen)
 	if err != nil {
 		return nil, false
 	}
 
 	// 读取数据内容
-	valueType := int(binary.BigEndian.Uint16(typeBuf))
-	valueLen := int(binary.BigEndian.Uint16(lenBuf))
+	valueType := int32(binary.BigEndian.Uint32(typeBuf))
+	valueLen := int(binary.BigEndian.Uint32(lenBuf))
 
-	valueBuf, err := c.ReadBuffer.read(HeadLen, valueLen)
+	valueBuf, err := c.ReadBuffer.read(packet.HeadLen, valueLen)
 	if err != nil {
 		return nil, false
 	}
-	message := Package{Code: valueType, Content: valueBuf}
+	message := packet.Package{Code: valueType, Content: valueBuf}
 	return &message, true
 }
 
@@ -201,12 +239,12 @@ func (c *Client) Read() (int, error) {
 
 // HandleConnect 建立连接
 func (c *Client) HandleConnect() {
-	log.Print("tcp connect")
+	log.Debug("HandleConnect")
 }
 
 // HandleReadErr 读取conn错误
 func (c *Client) HandleReadErr(err error) {
-	log.Println("连接读取异常：", "device_id", c.DeviceId, "user_id", c.UserId, "err_msg", err)
+	log.Debug("连接读取异常：", "device_id", c.DeviceId, "user_id", c.UserId, "err_msg", err)
 	str := err.Error()
 	// 服务器主动关闭连接
 	if strings.HasSuffix(str, "use of closed network connection") {
@@ -222,7 +260,7 @@ func (c *Client) HandleReadErr(err error) {
 	if strings.HasSuffix(str, "i/o timeout") {
 		return
 	}
-	log.Print("连接读取未知异常：", "device_id", c.DeviceId, "user_id", c.UserId, "err_msg", err)
+	log.Debug("连接读取未知异常：", "device_id", c.DeviceId, "user_id", c.UserId, "err_msg", err)
 }
 
 // Release 释放TCP连接
@@ -230,11 +268,6 @@ func (c *Client) Release() {
 	delete(c.DeviceId)
 	err := c.Codec.Conn.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
-	/*
-	   publishOffLine(transfer.OffLine{
-	       DeviceId: c.DeviceId,
-	       UserId:   c.UserId,
-	   })*/
 }

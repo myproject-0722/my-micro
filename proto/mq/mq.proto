@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package go.mymicro.proto.mq;
+
+message MQMessage {
+    int64 DeviceId = 1;
+	int64 UserId = 2;
+    int32 CodeType = 3;
+    bytes PbMessage = 4;
+}

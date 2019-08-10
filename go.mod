@@ -2,24 +2,16 @@ module github.com/myproject-0722/my-micro
 
 go 1.12
 
-replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
-
 require (
-	github.com/99designs/gqlgen v0.7.1
-	github.com/emicklei/go-restful v2.8.1+incompatible
-	github.com/gin-gonic/gin v1.3.0
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/golang/protobuf v1.3.2
-	github.com/micro/examples v0.1.0
-	github.com/micro/go-micro v1.7.0
-	github.com/micro/go-plugins v0.22.0
-	github.com/micro/micro v0.22.0
-	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
+	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
+	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
+	github.com/micro/go-micro v1.8.2
+	github.com/micro/go-plugins v1.2.0 // indirect
+	github.com/nsqio/go-nsq v1.0.7
 	github.com/opentracing/opentracing-go v1.1.0
-	github.com/uber-go/atomic v1.4.0 // indirect
+	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
+	github.com/sirupsen/logrus v1.4.2
 	github.com/uber/jaeger-client-go v2.16.0+incompatible
-	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
-	github.com/vektah/gqlparser v1.1.0
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7
-	google.golang.org/grpc v1.21.1
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )

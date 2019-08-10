@@ -29,8 +29,23 @@ func main() {
 	// parse command line flags
 	service.Init()
 
+	//client := micro.NewClient()
+	c := service.Client()
+	req := c.NewRequest("go.mymicro.srv.greeter", "Say.Hello", &hello.Request{
+		Name: "John",
+	})
+
+	rsp := &hello.Response{}
+
+	if err := c.Call(context.Background(), req, rsp); err != nil {
+		fmt.Println("call err: ", err, rsp)
+		return
+	}
+
+	fmt.Println("rsp:", rsp.Msg)
+
 	// Use the generated client stub
-	cl := hello.NewSayService("go.micro.srv.greeter", service.Client())
+	/*cl := hello.NewSayService("go.mymicro.srv.greeter", service.Client())
 
 	// Make request
 	rsp, err := cl.Hello(context.Background(), &hello.Request{
@@ -42,4 +57,17 @@ func main() {
 	}
 
 	fmt.Println(rsp.Msg)
+
+	time.Sleep(time.Duration(300) * time.Second)
+
+	// Make request
+	rsp1, err1 := cl.Hello(context.Background(), &hello.Request{
+		Name: "lixu",
+	})
+	if err != nil {
+		fmt.Println(err1)
+		return
+	}
+
+	fmt.Println(rsp1.Msg)*/
 }

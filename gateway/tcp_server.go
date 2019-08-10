@@ -2,9 +2,10 @@ package gateway
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"runtime"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Conf struct {
@@ -28,12 +29,10 @@ func NewTcpServer(conf Conf) *TcpServer {
 }
 
 func (s *TcpServer) Start() {
-	log.Print("TcpServer start!")
 	addr, err := net.ResolveTCPAddr("tcp", s.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print(addr)
 
 	listener, err := net.ListenTCP("tcp", addr)
 	if err != nil {
@@ -63,9 +62,6 @@ func (s *TcpServer) Accept(listener *net.TCPListener) {
 
 		client := NewClient(conn)
 		go client.DoConn()
-		/*
-		   connContext := NewConnContext(conn)
-		   go connContext.DoConn()*/
 	}
 }
 

@@ -5,11 +5,11 @@ import (
 	"log"
 	"net/http"
 
-	hello "github.com/micro/examples/greeter/srv/proto/hello"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/registry/consul"
 	"github.com/micro/go-micro/web"
+	hello "github.com/myproject-0722/my-micro/examples/greeter/srv/proto/hello"
 
 	"context"
 )
@@ -30,7 +30,7 @@ func main() {
 	webservice := micro.NewService(micro.Registry(reg))
 
 	service := web.NewService(
-		web.Name("go.micro.web.greeter"),
+		web.Name("go.mymicro.web.greeter"),
 	)
 
 	service.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

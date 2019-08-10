@@ -7,7 +7,7 @@ service User {
 }
 
 message SignInRequest {
-    string DeviceId = 1;
+    int64 DeviceId = 1;
 	int64 UserId = 2;
     string Token = 3;
 }

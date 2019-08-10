@@ -1,17 +1,20 @@
 package client
 
 import (
-	"log"
 	"net"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/myproject-0722/my-micro/gateway"
+	message "github.com/myproject-0722/my-micro/proto/message"
+	packet "github.com/myproject-0722/my-micro/proto/packet"
 	user "github.com/myproject-0722/my-micro/proto/user"
 )
 
 type TcpClient struct {
-	DeviceId     string
+	DeviceId     int64
 	UserId       int64
 	Token        string
 	SendSequence int64
@@ -28,6 +31,8 @@ func (c *TcpClient) Start() {
 
 	codec := gateway.NewCodec(conn)
 	c.codec = codec
+
+	go c.Receive()
 }
 
 func (c *TcpClient) SignIn() {
@@ -37,14 +42,14 @@ func (c *TcpClient) SignIn() {
 		Token:    c.Token,
 	}
 
-    log.Println(signIn.DeviceId, signIn.UserId, signIn.Token)
+	log.Debug(signIn.DeviceId, signIn.UserId, signIn.Token)
 	signInBytes, err := proto.Marshal(&signIn)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	pack := gateway.Package{Code: gateway.CodeSignIn, Content: signInBytes}
+	pack := packet.Package{Code: packet.CodeSignIn, Content: signInBytes}
 	c.codec.Eecode(pack, 10*time.Second)
 }
 
@@ -64,7 +69,7 @@ func (c *TcpClient) SyncTrigger() {
 func (c *TcpClient) HeadBeat() {
 	ticker := time.NewTicker(time.Second * 1)
 	for _ = range ticker.C {
-		err := c.codec.Eecode(gateway.Package{Code: gateway.CodeHeadbeat, Content: []byte{}}, 10*time.Second)
+		err := c.codec.Eecode(packet.Package{Code: packet.CodeHeadbeat, Content: []byte{}}, 10*time.Second)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -90,19 +95,38 @@ func (c *TcpClient) Receive() {
 	}
 }
 
-func (c *TcpClient) HandlePackage(pack gateway.Package) error {
+func (c *TcpClient) HandlePackage(pack packet.Package) error {
 	switch pack.Code {
-	/*case gateway.CodeSignInACK:
-	  ack := pb.SignInACK{}
-	  err := proto.Unmarshal(pack.Content, &ack)
-	  if err != nil {
-	      log.Fatal(err)
-	      return err
-	  }
-	  log.Println("设备登录回执：%#v\n", ack)*/
-	case gateway.CodeHeadbeatACK:
-		log.Println("心跳回执")
-		/*case connect.CodeMessageSendACK:
+	case packet.CodeSignInACK:
+		ack := user.SignInResponse{}
+		err := proto.Unmarshal(pack.Content, &ack)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		log.Info("设备登录rescode：", ack.ResCode, " resmsg:", ack.ResMsg)
+		break
+	case packet.CodeHeadbeatACK:
+		log.Info("心跳回执")
+		break
+	case packet.CodeMessageACK:
+		ack := message.SingleMessageAck{}
+		err := proto.Unmarshal(pack.Content, &ack)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		log.Info("消息发送回执：", ack.Seq)
+		break
+	case packet.CodeMessage:
+		recvmsg := message.SingleMessage{}
+		err := proto.Unmarshal(pack.Content, &recvmsg)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		log.Info("recv msg from: ", recvmsg.From, " msg:", recvmsg.Message, " seq:", recvmsg.Seq)
+		/*
 		        ack := pb.MessageSendACK{}
 		        err := proto.Unmarshal(pack.Content, &ack)
 		        if err != nil {
@@ -147,6 +171,23 @@ func (c *TcpClient) HandlePackage(pack gateway.Package) error {
 }
 
 func (c *TcpClient) SendMessage() {
+	SingleMessage := message.SingleMessage{
+		From:    1,
+		To:      1,
+		Seq:     c.SendSequence,
+		Message: "test",
+	}
+
+	c.SendSequence++
+
+	messageBytes, err := proto.Marshal(&SingleMessage)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	pack := packet.Package{Code: packet.CodeMessage, Content: messageBytes}
+	c.codec.Eecode(pack, 10*time.Second)
 	/*
 			send := pb.MessageSend{}
 		    fmt.Println("input ReceiverType,ReceiverId,Content")

@@ -3,6 +3,8 @@ package gateway
 import (
 	"errors"
 	"io"
+
+	packet "github.com/myproject-0722/my-micro/proto/packet"
 )
 
 var (
@@ -48,7 +50,7 @@ func (b *buffer) readFromReader() (int, error) {
 
 // seek 返回n个字节，而不产生移位，如果没有足够字节，返回错误
 func (b *buffer) seek(start, end int) ([]byte, error) {
-	if b.end-b.start >= end-start {
+	if b.end-b.start >= end-start && b.start+start+end <= packet.BufLen {
 		buf := b.buf[b.start+start : b.start+end]
 		return buf, nil
 	}

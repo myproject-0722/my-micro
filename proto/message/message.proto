@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package go.mymicro.proto.message;
+
+message SingleMessage {
+    int64 From = 1;
+	int64 To = 2;
+    int64 Seq = 3;
+    string Message = 4;
+}
+
+message SingleMessageAck {
+    int64 Seq = 1;
+}

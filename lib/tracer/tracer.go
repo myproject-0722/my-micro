@@ -2,10 +2,10 @@ package tracer
 
 import (
 	"io"
-	"log"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	log "github.com/sirupsen/logrus"
 	jaeger "github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 )
