@@ -1,6 +1,7 @@
 package client
 
 import (
+	"math/rand"
 	"net"
 	"time"
 
@@ -49,7 +50,7 @@ func (c *TcpClient) SignIn() {
 		return
 	}
 
-	pack := packet.Package{Code: packet.CodeSignIn, Content: signInBytes}
+	pack := packet.Package{CodeType: packet.CodeSignIn, Content: signInBytes}
 	c.codec.Eecode(pack, 10*time.Second)
 }
 
@@ -69,7 +70,7 @@ func (c *TcpClient) SyncTrigger() {
 func (c *TcpClient) HeadBeat() {
 	ticker := time.NewTicker(time.Second * 1)
 	for _ = range ticker.C {
-		err := c.codec.Eecode(packet.Package{Code: packet.CodeHeadbeat, Content: []byte{}}, 10*time.Second)
+		err := c.codec.Eecode(packet.Package{CodeType: packet.CodeHeadbeat, Content: []byte{}}, 10*time.Second)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -96,7 +97,7 @@ func (c *TcpClient) Receive() {
 }
 
 func (c *TcpClient) HandlePackage(pack packet.Package) error {
-	switch pack.Code {
+	switch pack.CodeType {
 	case packet.CodeSignInACK:
 		ack := user.SignInResponse{}
 		err := proto.Unmarshal(pack.Content, &ack)
@@ -171,9 +172,11 @@ func (c *TcpClient) HandlePackage(pack packet.Package) error {
 }
 
 func (c *TcpClient) SendMessage() {
+	randomnum := rand.Int()
+	to := int64(randomnum%1000 + 1)
 	SingleMessage := message.SingleMessage{
-		From:    1,
-		To:      1,
+		From:    c.UserId,
+		To:      to,
 		Seq:     c.SendSequence,
 		Message: "test",
 	}
@@ -186,7 +189,7 @@ func (c *TcpClient) SendMessage() {
 		return
 	}
 
-	pack := packet.Package{Code: packet.CodeMessage, Content: messageBytes}
+	pack := packet.Package{CodeType: packet.CodeMessage, Content: messageBytes}
 	c.codec.Eecode(pack, 10*time.Second)
 	/*
 			send := pb.MessageSend{}

@@ -80,7 +80,8 @@ func HandleSingleMessage(message *mq.MQMessage) error {
 	for _, v := range sMembers.Val() {
 		deviceid := v
 		log.Debug(deviceid)
-		var topic = "clientmsg_" + deviceid
+		//var topic = "clientmsg_" + deviceid
+		var topic = "clientmsg"
 		libmq.PublishMessage(topic, *message)
 	}
 	return nil

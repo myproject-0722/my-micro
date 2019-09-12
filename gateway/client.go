@@ -2,10 +2,8 @@ package gateway
 
 import (
 	"context"
-	"encoding/binary"
 	"io"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -27,20 +25,20 @@ const (
 )
 
 type Client struct {
-	Codec      *Codec // 编解码器
-	ReadBuffer buffer
-	WriteBuf   []byte
-	UserId     int64
-	DeviceId   int64
-	IsSignIn   bool // 是否登录
+	Codec *Codec // 编解码器
+	//ReadBuffer buffer
+	//WriteBuf []byte
+	UserId   int64
+	DeviceId int64
+	IsSignIn bool // 是否登录
 }
 
 func NewClient(conn net.Conn) *Client {
 	codec := NewCodec(conn)
 	return &Client{
-		Codec:      codec,
-		ReadBuffer: newBuffer(conn, packet.BufLen),
-		WriteBuf:   make([]byte, packet.BufLen),
+		Codec: codec,
+		//ReadBuffer: newBuffer(conn, packet.BufLen),
+		//WriteBuf: make([]byte, packet.BufLen),
 	}
 }
 
@@ -56,7 +54,8 @@ func (c *Client) DoConn() {
 			return
 		}
 
-		_, err = c.Read()
+		//_, err = c.Read()
+		_, err = c.Codec.Read()
 		if err != nil {
 			c.HandleReadErr(err)
 			return
@@ -67,10 +66,11 @@ func (c *Client) DoConn() {
 			if ok {
 				c.HandlePackage(message)
 				continue
-			} else {
-				c.HandleReadErr(err)
+			} /*else {
+				c.HandleDecodeErr()
 				return
-			}
+			}*/
+			break
 		}
 	}
 }
@@ -78,12 +78,12 @@ func (c *Client) DoConn() {
 // HandlePackage 处理消息包
 func (c *Client) HandlePackage(pack *packet.Package) {
 	// 未登录拦截
-	if pack.Code != packet.CodeSignIn && c.IsSignIn == false {
+	if pack.CodeType != packet.CodeSignIn && c.IsSignIn == false {
 		c.Release()
 		return
 	}
 
-	switch pack.Code {
+	switch pack.CodeType {
 	case packet.CodeSignIn:
 		c.HandlePackageSignIn(pack)
 		break
@@ -100,7 +100,7 @@ func (c *Client) HandlePackage(pack *packet.Package) {
 
 // HandlePackageHeadbeat 处理心跳包
 func (c *Client) HandlePackageHeadbeat() {
-	err := c.Codec.Eecode(packet.Package{Code: packet.CodeHeadbeatACK, Content: []byte{}}, WriteDeadline)
+	err := c.Codec.Eecode(packet.Package{CodeType: packet.CodeHeadbeatACK, Content: []byte{}}, WriteDeadline)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func (c *Client) HandlePackageOther(pack *packet.Package) {
 	message := mq.MQMessage{
 		UserId:    c.UserId,
 		DeviceId:  c.DeviceId,
-		CodeType:  pack.Code,
+		CodeType:  pack.CodeType,
 		PbMessage: pack.Content,
 	}
 
@@ -125,30 +125,11 @@ func (c *Client) HandleMQ2ClientMessage(msg *nsq.Message) error {
 		log.Error(err)
 	}
 
-	err = c.Codec.Eecode(packet.Package{Code: message.CodeType, Content: message.PbMessage}, WriteDeadline)
+	err = c.Codec.Eecode(packet.Package{CodeType: message.CodeType, Content: message.PbMessage}, WriteDeadline)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	return nil
-}
-
-func HandleMQ2ClientMessage(msg *nsq.Message) error {
-	var message mq.MQMessage
-	err := proto.Unmarshal(msg.Body, &message)
-	if err != nil {
-		log.Error(err)
-	}
-
-	c := load(message.DeviceId)
-	if c != nil {
-		err = c.Codec.Eecode(packet.Package{Code: message.CodeType, Content: message.PbMessage}, WriteDeadline)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -187,7 +168,7 @@ func (c *Client) HandlePackageSignIn(pack *packet.Package) {
 		return
 	}
 
-	err = c.Codec.Eecode(packet.Package{Code: packet.CodeSignInACK, Content: content}, WriteDeadline)
+	err = c.Codec.Eecode(packet.Package{CodeType: packet.CodeSignInACK, Content: content}, WriteDeadline)
 	if err != nil {
 		log.Error(err)
 		return
@@ -200,14 +181,15 @@ func (c *Client) HandlePackageSignIn(pack *packet.Package) {
 		c.UserId = sign.UserId
 		store(c.DeviceId, c)
 
-		var clientMsgTopic = "clientmsg_" + strconv.FormatInt(c.DeviceId, 10)
-		libmq.NsqConsumer(clientMsgTopic, "1", HandleMQ2ClientMessage, 20)
+		//var clientMsgTopic = "clientmsg_" + strconv.FormatInt(c.DeviceId, 10)
+		//libmq.NsqConsumer(clientMsgTopic, "1", HandleMQ2ClientMessage, 20)
 	}
 }
 
 // Decode 解码数据
 func (c *Client) Decode() (*packet.Package, bool) {
-	var err error
+	return c.Codec.Decode()
+	/*var err error
 	// 读取数据类型
 	typeBuf, err := c.ReadBuffer.seek(0, packet.TypeLen)
 	if err != nil {
@@ -228,13 +210,60 @@ func (c *Client) Decode() (*packet.Package, bool) {
 	if err != nil {
 		return nil, false
 	}
-	message := packet.Package{Code: valueType, Content: valueBuf}
-	return &message, true
+	message := packet.Package{CodeType: valueType, Content: valueBuf}
+	return &message, true*/
+	/*var err error
+
+	//读取magic
+	magicNumber, err := c.ReadBuffer.read(0, packet.MagicLen)
+	if err != nil {
+		return nil, false
+	}
+
+	if bytes.Compare(magicNumber, packet.MagicNumber) != 0 {
+		log.Error("magicNumber error: ", magicNumber, packet.MagicNumber)
+		return nil, false
+	}
+
+	// 读取数据类型
+	typeBuf, err := c.ReadBuffer.seek(packet.MagicLen, packet.MagicLen+packet.TypeLen)
+	if err != nil {
+		return nil, false
+	}
+
+	//读取checksum
+	checkSum, err := c.ReadBuffer.read(packet.MagicLen+packet.TypeLen, packet.MagicLen+packet.TypeLen+packet.CheckSumLen)
+	if err != nil {
+		return nil, false
+	}
+
+	// 读取数据长度
+	lenBuf, err := c.ReadBuffer.seek(packet.MagicLen+packet.TypeLen+packet.CheckSumLen, packet.HeadLen)
+	if err != nil {
+		return nil, false
+	}
+
+	// 读取数据内容
+	valueType := int32(binary.BigEndian.Uint32(typeBuf))
+	valueLen := int(binary.BigEndian.Uint32(lenBuf))
+
+	valueBuf, err := c.ReadBuffer.read(packet.HeadLen, valueLen)
+	if err != nil {
+		return nil, false
+	}
+
+	sum := sha256.Sum256(valueBuf)
+	if sum[0] != checkSum[0] || sum[1] != checkSum[1] || sum[2] != checkSum[2] || sum[3] != checkSum[3] {
+		return nil, false
+	}
+
+	message := packet.Package{CodeType: valueType, Content: valueBuf}
+	return &message, true*/
 }
 
 // Read 从conn里面读取数据，当conn发生阻塞，这个方法也会阻塞
 func (c *Client) Read() (int, error) {
-	return c.ReadBuffer.readFromReader()
+	return c.Codec.ReadBuf.readFromReader()
 }
 
 // HandleConnect 建立连接
@@ -261,6 +290,12 @@ func (c *Client) HandleReadErr(err error) {
 		return
 	}
 	log.Debug("连接读取未知异常：", "device_id", c.DeviceId, "user_id", c.UserId, "err_msg", err)
+}
+
+// HandleReadErr 读取conn错误
+func (c *Client) HandleDecodeErr() {
+	log.Debug("连接读取Decode异常：", "device_id", c.DeviceId, "user_id", c.UserId)
+	c.Release()
 }
 
 // Release 释放TCP连接

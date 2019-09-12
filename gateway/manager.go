@@ -15,7 +15,7 @@ func store(deviceId int64, c *Client) {
 }
 
 // load 获取
-func load(deviceId int64) *Client {
+func Load(deviceId int64) *Client {
 	value, ok := manager.Load(deviceId)
 	if ok {
 		return value.(*Client)

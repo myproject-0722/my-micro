@@ -11,17 +11,35 @@ import (
 func main() {
 	liblog.InitLog("/var/log/my-micro/", "robot.log")
 
-	client := client.TcpClient{
-		UserId:       1,
-		DeviceId:     123456,
-		Token:        "999999",
-		SendSequence: 1,
-		SyncSequence: 1,
+	var clientArray [1000]client.TcpClient
+
+	for i := 0; i < 1000; i++ {
+		userId := int64(i + 1)
+		clientArray[i].UserId = userId
+		clientArray[i].DeviceId = userId
+		clientArray[i].Token = "123456"
+		clientArray[i].SendSequence = 1
+		clientArray[i].SyncSequence = 1
+
+		clientArray[i].Start()
+		clientArray[i].SignIn()
+		/*
+			client[i] = client.TcpClient{
+				UserId:       userId,
+				DeviceId:     123456,
+				Token:        "999999",
+				SendSequence: 1,
+				SyncSequence: 1,
+			}*/
 	}
-	client.Start()
-	client.SignIn()
+
+	//client.Start()
+	//client.SignIn()
 	for {
-		client.SendMessage()
-		time.Sleep(10 * time.Millisecond)
+		for j := 0; j < 1000; j++ {
+			clientArray[j].SendMessage()
+		}
+		//client.SendMessage()
+		time.Sleep(100 * time.Millisecond)
 	}
 }
