@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -78,10 +79,16 @@ func HandleSingleMessage(message *mq.MQMessage) error {
 	var key string = "userdevice:" + strconv.FormatInt(to, 10)
 	sMembers := redisClient.SMembers(key)
 	for _, v := range sMembers.Val() {
-		deviceid := v
-		log.Debug(deviceid)
-		//var topic = "clientmsg_" + deviceid
-		var topic = "clientmsg"
+		value := v
+		valueArray := strings.Split(value, "-")
+		deviceid, err := strconv.ParseInt(valueArray[0], 10, 64)
+		if err != nil {
+			log.Error(err)
+		}
+		gatewayid := valueArray[1]
+		log.Debug(deviceid, gatewayid)
+		var topic = "clientmsg_" + gatewayid
+		//var topic = "clientmsg"
 		libmq.PublishMessage(topic, *message)
 	}
 	return nil

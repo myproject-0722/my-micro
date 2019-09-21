@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/myproject-0722/my-micro/conf"
 	"github.com/myproject-0722/my-micro/gateway"
 	message "github.com/myproject-0722/my-micro/proto/message"
 	packet "github.com/myproject-0722/my-micro/proto/packet"
@@ -173,7 +174,7 @@ func (c *TcpClient) HandlePackage(pack packet.Package) error {
 
 func (c *TcpClient) SendMessage() {
 	randomnum := rand.Int()
-	to := int64(randomnum%1000 + 1)
+	to := int64(randomnum%conf.RobotNum + 1)
 	SingleMessage := message.SingleMessage{
 		From:    c.UserId,
 		To:      to,

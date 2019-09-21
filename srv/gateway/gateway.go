@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/myproject-0722/my-micro/conf"
 	"github.com/myproject-0722/my-micro/gateway"
@@ -42,7 +44,7 @@ func main() {
 	gateway.InitRedis()
 	libmq.Init()
 
-	var clientMsgTopic = "clientmsg"
+	var clientMsgTopic = "clientmsg_" + strconv.Itoa(conf.GatewayId)
 	go libmq.NsqConsumer(clientMsgTopic, "1", HandleMQ2ClientMessage, 20)
 
 	//长连接服务

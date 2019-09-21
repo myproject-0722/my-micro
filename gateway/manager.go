@@ -11,7 +11,8 @@ var manager sync.Map
 func store(deviceId int64, c *Client) {
 	manager.Store(deviceId, c)
 	var key string = "userdevice:" + strconv.FormatInt(c.UserId, 10)
-	redisClient.SAdd(key, c.DeviceId)
+	var value string = strconv.FormatInt(c.DeviceId, 10) + "-" + strconv.FormatInt((int64)(c.GatewayId), 10)
+	redisClient.SAdd(key, value)
 }
 
 // load 获取

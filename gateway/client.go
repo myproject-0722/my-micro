@@ -11,6 +11,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/registry"
+	"github.com/myproject-0722/my-micro/conf"
 	libmq "github.com/myproject-0722/my-micro/lib/mq"
 	"github.com/myproject-0722/my-micro/lib/register"
 	mq "github.com/myproject-0722/my-micro/proto/mq"
@@ -24,19 +26,24 @@ const (
 	WriteDeadline = 10 * time.Second
 )
 
+var registerConsul registry.Registry
+var service micro.Service
+
 type Client struct {
 	Codec *Codec // 编解码器
 	//ReadBuffer buffer
 	//WriteBuf []byte
-	UserId   int64
-	DeviceId int64
-	IsSignIn bool // 是否登录
+	UserId    int64
+	DeviceId  int64
+	IsSignIn  bool // 是否登录
+	GatewayId int
 }
 
 func NewClient(conn net.Conn) *Client {
 	codec := NewCodec(conn)
 	return &Client{
-		Codec: codec,
+		Codec:     codec,
+		GatewayId: conf.GatewayId,
 		//ReadBuffer: newBuffer(conn, packet.BufLen),
 		//WriteBuf: make([]byte, packet.BufLen),
 	}
@@ -145,12 +152,12 @@ func (c *Client) HandlePackageSignIn(pack *packet.Package) {
 
 	log.Debug("Recv signin:", sign.DeviceId, " ", sign.UserId, " ", sign.Token)
 
-	reg := register.NewRegistry()
-
+	//registerConsul = register.NewRegistry()
+	service = register.NewRegistryService()
 	// create a new service
-	service := micro.NewService(micro.Registry(reg))
+	//service := micro.NewService(micro.Registry(registerConsul))
 	// parse command line flags
-	service.Init()
+	//service.Init()
 
 	// Use the generated client stub
 	cl := user.NewUserService("go.mymicro.srv.user", service.Client())

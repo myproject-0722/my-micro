@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/myproject-0722/my-micro/conf"
 	liblog "github.com/myproject-0722/my-micro/lib/log"
 	"github.com/myproject-0722/my-micro/robot/client"
 	//log "github.com/sirupsen/logrus"
@@ -11,9 +12,9 @@ import (
 func main() {
 	liblog.InitLog("/var/log/my-micro/", "robot.log")
 
-	var clientArray [1000]client.TcpClient
+	var clientArray [conf.RobotNum]client.TcpClient
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < conf.RobotNum; i++ {
 		userId := int64(i + 1)
 		clientArray[i].UserId = userId
 		clientArray[i].DeviceId = userId
@@ -23,6 +24,8 @@ func main() {
 
 		clientArray[i].Start()
 		clientArray[i].SignIn()
+
+		time.Sleep(100 * time.Millisecond)
 		/*
 			client[i] = client.TcpClient{
 				UserId:       userId,
@@ -36,7 +39,7 @@ func main() {
 	//client.Start()
 	//client.SignIn()
 	for {
-		for j := 0; j < 1000; j++ {
+		for j := 0; j < conf.RobotNum; j++ {
 			clientArray[j].SendMessage()
 		}
 		//client.SendMessage()
