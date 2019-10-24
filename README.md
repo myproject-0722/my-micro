@@ -3,7 +3,7 @@ my-micro基于[micro](https://github.com/micro/micro)，编写微服务框架所
 
 # 系统架构
 my-micro考虑了服务器应用的各个场景（IM、直播业务、电商皆可），客户端可通过http、websocket、socket(封装pb)与服务器通信。
-目前仅完成通信的各种示例，后面会慢慢完善。
+目前仅完成通信的各种示例(仅验证可行性)，后面会慢慢完善。
 ![avatar](png/my-micro系统架构图.png)
 ## http-gateway
 客户端http/https通信
@@ -24,47 +24,37 @@ my-micro考虑了服务器应用的各个场景（IM、直播业务、电商皆�
 ## 其它服务
 比如通知等，这里暂略，后续再添加
 # 核心业务流程图(以IM、直播业务为例)
+未考虑消息丢失、按顺序发送、离线消息等
 ## 登录业务序列图
 ![avatar](png/my-micro登录序列图.png)
 ## IM消息序列图
 ![avatar](png/my-microIM消息序列图.gif)
 ## 群发消息序列图
 ![avatar](png/my-micro群发消息序列图.png)
-# 1.环境安装：
+# 环境安装：
 ## 1.protobuf
 [下载](https://github.com/protocolbuffers/protobuf/archive/v3.6.0.1.zip)或wget https://github.com/protocolbuffers/protobuf/archive/v3.6.0.1.zip
-./autogen.sh && ./configure && make && make check  
+./autogen.sh && ./configure && make  
 sudo make install    
 sudo ldconfig  
 ## 2.protoc-gen-go
 go get -u github.com/golang/protobuf/protoc-gen-go
 ## 3.protoc-gen-micro
 go get github.com/micro/protoc-gen-micro
-## 4.依赖环境启动(仅方便测试)
-docker-compose up &
+## 4.依赖环境安装启动(仅方便测试)
 sudo apt-get install redis-server
 
-# 2.范例说明
-## 1. 运行micro api
-micro --registry=consul --registry_address=127.0.0.1:8500 --server_advertise=192.168.0.194:8080 api --handler=api --address=0.0.0.0:8080 --namespace=go.mymicro.api
-ACME及TLS等配置略过
-## 2.启动srv及api
-cd examples/greeter
-go run srv/main.go
-go run api/api.go
-## 3.测试
-curl http://localhost:8080/greeter/say/hello?name=John
-## 4.如使用web
-go run web/web.go
-micro --registry=consul --registry_address=127.0.0.1:8500 web --namespace=go.mymicro.web
-打开网址:http://localhost:8082
-## 5.长连接测试见robot目录
-
-# TODO
-## 注册登录（目前仅用登入协议测试）
-## 与数据库交互
-## 防消息丢失重发等
-## 群发消息等
+# 测试
+## 1. 运行consul、nsq、jaeger等
+docker-compose up
+## 2.启动rpcsvr
+go run rpcsrv/user/main.go
+## 3.启动逻辑服
+go run logicsvr/main.go
+## 4.启动gateway
+go run go run srv/gateway/gateway.go
+## 5.启动robot机器人进行登录发消息测试
+go run robot/main.go
 
 
 
