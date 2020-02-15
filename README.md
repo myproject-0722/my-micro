@@ -52,7 +52,7 @@ go run rpcsrv/user/main.go
 ## 3.启动逻辑服
 go run logicsvr/main.go
 ## 4.启动gateway
-go run go run srv/gateway/gateway.go
+go run srv/gateway/gateway.go
 ## 5.启动robot机器人进行登录发消息测试
 go run robot/main.go
 
